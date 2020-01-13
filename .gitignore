@@ -1,0 +1,26 @@
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# VSCode
+.vscode/*
+*.code-workspace
+.factorypath
+
+# Mac
+.DS_Store
+
+# Maven
+log/
+target/
+
+#created in tests
+users.csv
+values.csv
+search.csv
