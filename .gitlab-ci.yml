@@ -15,7 +15,7 @@ junit:
   tags: 
     - BP-TDGT-CI
   script:
-    - apk add --no-cache mosquitto maven
+    - apk add --no-cache mosquitto maven openjdk11
     - mkdir -p /mosquitto/config/
     - cp ./mosquitto/mosquitto.conf /mosquitto/config/
     - $(which mosquitto) -c /mosquitto/config/mosquitto.conf > mosquitto.log 2>&1 &
