@@ -2,17 +2,27 @@ stages:
   - test
 
 junit:
+
+  services:
+    - docker:dind
   stage: test
-  image: "maven:3"
+  image: "docker:latest"
   # save mosquitto log to debug errors
   artifacts:
       when: on_failure
       paths:
         - mosquitto.log
+  variables:
+    # Instruct Testcontainers to use the daemon of DinD.
+    DOCKER_HOST: "tcp://docker:2375"
+    # Improve performance with overlayfs.
+    DOCKER_DRIVER: overlay2
+
   tags: 
     - BP-TDGT-CI
   script:
-    - apt update && apt install -y mosquitto
+    - docker ps
+    - apk add --no-cache mosquitto maven openjdk11
     - mkdir -p /mosquitto/config/
     - cp ./mosquitto/mosquitto.conf /mosquitto/config/
     - $(which mosquitto) -c /mosquitto/config/mosquitto.conf > mosquitto.log 2>&1 &
