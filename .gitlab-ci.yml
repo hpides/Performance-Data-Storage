@@ -15,6 +15,7 @@ junit:
   tags: 
     - BP-TDGT-CI
   script:
+    - docker ps
     - apk add --no-cache mosquitto maven openjdk11
     - mkdir -p /mosquitto/config/
     - cp ./mosquitto/mosquitto.conf /mosquitto/config/
