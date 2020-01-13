@@ -4,9 +4,9 @@ stages:
 junit:
 
   services:
-    - docker:dind
+    - docker:18.09.7-dind
   stage: test
-  image: "docker:latest"
+  image: "docker:18.09.7"
   # save mosquitto log to debug errors
   artifacts:
       when: on_failure
