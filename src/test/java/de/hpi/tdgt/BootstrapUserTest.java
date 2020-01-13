@@ -25,8 +25,8 @@ import static org.hamcrest.Matchers.notNullValue;
 @Log4j2
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestDatabase
-@ContextConfiguration(initializers = BootstrapUser.Initializer.class)
-public class BootstrapUser {
+@ContextConfiguration(initializers = BootstrapUserTest.Initializer.class)
+public class BootstrapUserTest {
     @ClassRule
     public static PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer().withPassword("inmemory")
             .withUsername("inmemory");
