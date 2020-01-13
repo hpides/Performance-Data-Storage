@@ -1,7 +1,11 @@
 package de.hpi.tdgt;
 
-import de.hpi.tdgt.users.UserRepository;
+import de.hpi.tdgt.test.ReportedTime;
+import de.hpi.tdgt.test.ReportedTimeRepository;
+import de.hpi.tdgt.test.TestRepository;
 import lombok.extern.log4j.Log4j2;
+import lombok.val;
+import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
 import org.junit.jupiter.api.Test;
@@ -18,8 +22,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import java.util.Date;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 @ExtendWith(SpringExtension.class)
 @Log4j2
@@ -51,9 +57,38 @@ public class BootstrapUserTest {
         }
     }
     @Autowired
-    private UserRepository userRepository;
+    private TestRepository testRepository;
+
+    @Autowired
+    private ReportedTimeRepository reportedTimeRepository;
+
     @Test
     public void injectionWorks(){
-        assertThat(userRepository, notNullValue());
+        assertThat(testRepository, notNullValue());
+        assertThat(reportedTimeRepository, notNullValue());
     }
+
+    @Test
+    public void AddingOfTestsWorks(){
+        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", null);
+        assertThat(testRepository.save(test), notNullValue());
+    }
+
+    @Test
+    public void QueryingOfTestsWorks(){
+        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", null);
+        testRepository.save(test);
+        assertThat(testRepository.existsById(test.getCreatedAt()), is(true));
+    }
+
+    @Test
+    public void AddingReportedTimesWorks(){
+        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", null);
+        val time = new ReportedTime(test, "{}",new Date(1234567890L));
+        testRepository.save(test);
+        reportedTimeRepository.save(time);
+        assertThat(testRepository.findById(test.getCreatedAt()).get().getTimes(), not(empty()));
+    }
+
+
 }
