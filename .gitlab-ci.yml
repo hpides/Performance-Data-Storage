@@ -1,0 +1,24 @@
+stages:
+  - test
+
+junit:
+
+  services:
+    - docker:dind
+  stage: test
+  image: "docker:latest"
+  # save mosquitto log to debug errors
+  artifacts:
+      when: on_failure
+      paths:
+        - mosquitto.log
+  tags: 
+    - BP-TDGT-CI
+  script:
+    - apt update && apt install -y mosquitto maven
+    - mkdir -p /mosquitto/config/
+    - cp ./mosquitto/mosquitto.conf /mosquitto/config/
+    - $(which mosquitto) -c /mosquitto/config/mosquitto.conf > mosquitto.log 2>&1 &
+    # config assumes broker is running on same machine as System under Test, so we need this environment for the tests
+    - echo "127.0.0.1 users" >> /etc/hosts
+    - mvn test
