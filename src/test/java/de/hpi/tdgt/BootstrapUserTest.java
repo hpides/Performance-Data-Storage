@@ -24,7 +24,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @ExtendWith(SpringExtension.class)
 @Log4j2
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureTestDatabase
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ContextConfiguration(initializers = BootstrapUserTest.Initializer.class)
 public class BootstrapUserTest {
     @ClassRule
@@ -41,6 +41,7 @@ public class BootstrapUserTest {
 
         @Override
         public void initialize(@NotNull ConfigurableApplicationContext configurableApplicationContext) {
+            postgreSQLContainer.start();
             TestPropertyValues values = TestPropertyValues.of(
                     "spring.datasource.url=" + postgreSQLContainer.getJdbcUrl(),
                     "spring.datasource.password=" + postgreSQLContainer.getPassword(),
