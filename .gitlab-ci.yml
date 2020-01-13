@@ -2,11 +2,8 @@ stages:
   - test
 
 junit:
-
-  services:
-    - docker:dind
   stage: test
-  image: "docker:latest"
+  image: "maven:3"
   # save mosquitto log to debug errors
   artifacts:
       when: on_failure
@@ -15,8 +12,7 @@ junit:
   tags: 
     - BP-TDGT-CI
   script:
-    - docker ps
-    - apk add --no-cache mosquitto maven openjdk11
+    - apt update && apt install -y mosquitto
     - mkdir -p /mosquitto/config/
     - cp ./mosquitto/mosquitto.conf /mosquitto/config/
     - $(which mosquitto) -c /mosquitto/config/mosquitto.conf > mosquitto.log 2>&1 &
