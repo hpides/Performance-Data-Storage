@@ -1,0 +1,16 @@
+version: '3.3'
+
+services:
+  db:
+    image: eclipse-mosquitto:1.5
+    volumes:
+      - ./:/mosquitto/config/
+      - data:/mosquitto/data
+      - log:/mosquitto/log
+    ports:
+      #- 1883:1883
+      - 9001:9001
+
+volumes:
+    data: {}
+    log: {}
