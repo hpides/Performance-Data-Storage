@@ -1,6 +1,6 @@
 # Performance data storage
 
-Stores received user configurations and performance data.
+Stores received test configurations and performance data.
 
 ## Note on running in GitLab-CI
 Make sure that your GitLab-Runner uses docker executor. 
