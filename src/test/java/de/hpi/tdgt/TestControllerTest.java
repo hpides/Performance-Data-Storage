@@ -111,7 +111,7 @@ public class TestControllerTest {
     private ReportedTimeRepository reportedTimeRepository;
     @Test
     public void canGetATest() throws MalformedURLException, URISyntaxException {
-        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", true, new LinkedList<>());
+        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>());
         testRepository.save(test);
         val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()).toURI()).accept(MediaType.APPLICATION_JSON).build();
         val returnedTest = testRestTemplate.exchange(entity, de.hpi.tdgt.test.Test.class).getBody();
@@ -120,7 +120,7 @@ public class TestControllerTest {
 
     @Test
     public void canCreateATestWithMqtt() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
-        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", true, new LinkedList<>());
+        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>());
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,true);
         Thread.sleep(200);
         assertThat(testRepository.findById(test.getCreatedAt()).orElse(null), notNullValue());
@@ -129,7 +129,7 @@ public class TestControllerTest {
     @Test
     public void canCreateATestWithMqttIncludingTestConfig() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
         val config = "{ a=\" b\"}";
-        val test = new de.hpi.tdgt.test.Test(123456L, config, true, new LinkedList<>());
+        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.getCreatedAt()+ " "+test.getTestConfig()).getBytes(StandardCharsets.UTF_8),2,true);
         Thread.sleep(200);
         assertThat(testRepository.findById(test.getCreatedAt()).orElse(null).getTestConfig(), equalTo(config));
@@ -138,7 +138,7 @@ public class TestControllerTest {
     @Test
     public void canAcceptStopMessages() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
         val config = "{ a=\" b\"}";
-        val test = new de.hpi.tdgt.test.Test(123456L, config, true, new LinkedList<>());
+        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
         testRepository.save(test);
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testEnd "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,true);
         Thread.sleep(200);
