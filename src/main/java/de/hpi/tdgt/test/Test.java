@@ -15,7 +15,10 @@ import java.util.List;
 public class Test {
     @Id
     private long createdAt;
+    @Lob
     private String testConfig;
+
+    private boolean isActive = true;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "test")
     private List<ReportedTime> times;

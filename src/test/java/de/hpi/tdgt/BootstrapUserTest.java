@@ -18,11 +18,18 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -70,25 +77,24 @@ public class BootstrapUserTest {
 
     @Test
     public void AddingOfTestsWorks(){
-        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", null);
+        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig",true, new LinkedList<>());
         assertThat(testRepository.save(test), notNullValue());
     }
 
     @Test
     public void QueryingOfTestsWorks(){
-        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", null);
+        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", true, new LinkedList<>());
         testRepository.save(test);
         assertThat(testRepository.existsById(test.getCreatedAt()), is(true));
     }
 
     @Test
     public void AddingReportedTimesWorks(){
-        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", null);
+        val test = new de.hpi.tdgt.test.Test(123456L, "TestConfig", true, new LinkedList<>());
         val time = new ReportedTime(test, "{}",new Date(1234567890L));
         testRepository.save(test);
         reportedTimeRepository.save(time);
         assertThat(testRepository.findById(test.getCreatedAt()).get().getTimes(), not(empty()));
     }
-
 
 }
