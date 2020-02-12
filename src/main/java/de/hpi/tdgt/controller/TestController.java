@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @Log4j2
@@ -41,8 +42,13 @@ public class TestController extends MqttController{
     }
 
     @GetMapping(path="/tests/finished")
-    public List<Test> getFinishedTests(){
-        return repository.findAllByIsActiveEquals(false);
+    public Long[] getFinishedTests(){
+        return repository.findAllByIsActiveEquals(false).stream().map(Test::getCreatedAt).toArray(Long[]::new);
+    }
+
+    @GetMapping(path="/tests/running")
+    public Long[] getRunningTests(){
+        return repository.findAllByIsActiveEquals(true).stream().map(Test::getCreatedAt).toArray(Long[]::new);
     }
 
     /**

@@ -150,14 +150,28 @@ public class TestControllerTest {
     public void canRetrieveFinishedTestIDs() throws InterruptedException, MalformedURLException, URISyntaxException {
         val config = "{ a=\" b\"}";
         val test1 = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
-        val test2 = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, false, new LinkedList<>());
+        val test2 = new de.hpi.tdgt.test.Test(System.currentTimeMillis() + 10, config, false, new LinkedList<>());
         testRepository.save(test1);
         testRepository.save(test2);
         val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/tests/finished").toURI()).accept(MediaType.APPLICATION_JSON).build();
-        val returnedTests = testRestTemplate.exchange(entity, de.hpi.tdgt.test.Test[].class).getBody();
+        val returnedTests = testRestTemplate.exchange(entity, Long[].class).getBody();
         assertThat(returnedTests, notNullValue());
-        assertThat(Arrays.asList(returnedTests), containsInRelativeOrder(test2));
-        assertThat(Arrays.asList(returnedTests), not(containsInRelativeOrder(test1)));
+        assertThat(Arrays.asList(returnedTests), containsInRelativeOrder(test2.getCreatedAt()));
+        assertThat(Arrays.asList(returnedTests), not(containsInRelativeOrder(test1.getCreatedAt())));
+    }
+
+    @Test
+    public void canRetrieveRunningTestIDs() throws InterruptedException, MalformedURLException, URISyntaxException {
+        val config = "{ a=\" b\"}";
+        val test1 = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
+        val test2 = new de.hpi.tdgt.test.Test(System.currentTimeMillis() + 10, config, false, new LinkedList<>());
+        testRepository.save(test1);
+        testRepository.save(test2);
+        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/tests/running").toURI()).accept(MediaType.APPLICATION_JSON).build();
+        val returnedTests = testRestTemplate.exchange(entity, Long[].class).getBody();
+        assertThat(returnedTests, notNullValue());
+        assertThat(Arrays.asList(returnedTests), containsInRelativeOrder(test1.getCreatedAt()));
+        assertThat(Arrays.asList(returnedTests), not(containsInRelativeOrder(test2.getCreatedAt())));
     }
 
 }
