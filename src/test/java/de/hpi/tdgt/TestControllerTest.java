@@ -35,12 +35,13 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 @ExtendWith(SpringExtension.class)
 @Log4j2
@@ -143,6 +144,20 @@ public class TestControllerTest {
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testEnd "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,true);
         Thread.sleep(200);
         assertThat(testRepository.findById(test.getCreatedAt()).orElse(null).isActive(), equalTo(false));
+    }
+
+    @Test
+    public void canRetrieveFinishedTestIDs() throws InterruptedException, MalformedURLException, URISyntaxException {
+        val config = "{ a=\" b\"}";
+        val test1 = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
+        val test2 = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, false, new LinkedList<>());
+        testRepository.save(test1);
+        testRepository.save(test2);
+        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/tests/finished").toURI()).accept(MediaType.APPLICATION_JSON).build();
+        val returnedTests = testRestTemplate.exchange(entity, de.hpi.tdgt.test.Test[].class).getBody();
+        assertThat(returnedTests, notNullValue());
+        assertThat(Arrays.asList(returnedTests), containsInRelativeOrder(test2));
+        assertThat(Arrays.asList(returnedTests), not(containsInRelativeOrder(test1)));
     }
 
 }

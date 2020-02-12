@@ -3,7 +3,6 @@ package de.hpi.tdgt.test;
 import lombok.*;
 
 import javax.persistence.*;
-import java.util.Date;
 
 @Entity
 @Getter
@@ -20,7 +19,6 @@ public class ReportedTime {
     @ManyToOne()
     private Test test;
 
-    @Lob
     private String fullEntry;
 
     public ReportedTime(Test test, String fullEntry) {
