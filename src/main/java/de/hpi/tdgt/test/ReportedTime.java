@@ -18,7 +18,7 @@ public class ReportedTime {
 
     @ManyToOne()
     private Test test;
-
+    @Lob
     private String fullEntry;
 
     public ReportedTime(Test test, String fullEntry) {

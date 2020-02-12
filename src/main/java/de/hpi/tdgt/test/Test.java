@@ -15,7 +15,7 @@ import java.util.List;
 public class Test {
     @Id
     private long createdAt;
-
+    @Lob
     private String testConfig;
 
     private boolean isActive = true;
