@@ -1,30 +1,28 @@
 package de.hpi.tdgt.controller;
 
+import de.hpi.tdgt.test.ReportedTime;
 import de.hpi.tdgt.test.Test;
 import de.hpi.tdgt.test.TestRepository;
 import lombok.extern.log4j.Log4j2;
 import lombok.val;
-import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.UUID;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @Log4j2
-public class TestController {
+public class TestController extends MqttController{
     public TestController(TestRepository repository, @Value("${mqtt.host}") String mqtt_host) throws MqttException {
         //only way to autowire it, field injection would not be working because evaluated after creation
         this.mqtt_host = mqtt_host;
+        this.mqtt_topic = MQTT_CONTROL_TOPIC;
         this.repository = repository;
-        controlClient = prepareClient(MQTT_CONTROL_TOPIC, (s, message) -> {
+        prepareClient((s, message) -> {
             receivedControlMessage(s, message.toString());
         });
     }
@@ -34,23 +32,23 @@ public class TestController {
     public Test getTest(@PathVariable long id){
         return repository.findById(id).orElse(null);
     }
+    @GetMapping(path="/test/{id}/times")
+    public String[] getTimesForTest(@PathVariable long id){
+        val test = repository.findById(id).orElse(null);
+        if(test == null){
+            return new String[0];
+        }
+        return test.getTimes().stream().map(ReportedTime::getFullEntry).toArray(String[]::new);
+    }
 
+    @GetMapping(path="/tests/finished")
+    public Long[] getFinishedTests(){
+        return repository.findAllByIsActiveEquals(false).stream().map(Test::getCreatedAt).toArray(Long[]::new);
+    }
 
-    private final String mqtt_host;
-    private MqttClient controlClient;
-
-
-    private MqttClient prepareClient(final String topic, IMqttMessageListener callback) throws MqttException {
-        String publisherId = UUID.randomUUID().toString();
-        MqttClient client = new MqttClient(mqtt_host,publisherId, new MemoryPersistence());
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setAutomaticReconnect(true);
-        options.setCleanSession(true);
-        options.setConnectionTimeout(10);
-        client.connect(options);
-        client.subscribe(topic, callback);
-
-        return client;
+    @GetMapping(path="/tests/running")
+    public Long[] getRunningTests(){
+        return repository.findAllByIsActiveEquals(true).stream().map(Test::getCreatedAt).toArray(Long[]::new);
     }
 
     /**

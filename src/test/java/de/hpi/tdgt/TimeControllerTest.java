@@ -1,6 +1,9 @@
 package de.hpi.tdgt;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.hpi.tdgt.controller.TestController;
+import de.hpi.tdgt.controller.TimeController;
+import de.hpi.tdgt.test.ReportedTime;
 import de.hpi.tdgt.test.ReportedTimeRepository;
 import de.hpi.tdgt.test.TestRepository;
 import lombok.extern.log4j.Log4j2;
@@ -35,8 +38,8 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.UUID;
 
@@ -48,7 +51,7 @@ import static org.hamcrest.Matchers.*;
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ContextConfiguration(initializers = BootstrapUserTest.Initializer.class)
-public class TestControllerTest {
+public class TimeControllerTest {
 
     @ClassRule
     public static PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer().withPassword("inmemory")
@@ -111,67 +114,74 @@ public class TestControllerTest {
     @Autowired
     private ReportedTimeRepository reportedTimeRepository;
     @Test
-    public void canGetATest() throws MalformedURLException, URISyntaxException {
+    public void canGetATimeOfATest() throws MalformedURLException, URISyntaxException {
         val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>());
         testRepository.save(test);
-        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()).toURI()).accept(MediaType.APPLICATION_JSON).build();
-        val returnedTest = testRestTemplate.exchange(entity, de.hpi.tdgt.test.Test.class).getBody();
-        assertThat(returnedTest, equalTo(test));
+        val time = new ReportedTime();
+        time.setFullEntry("{}");
+        time.setTest(test);
+        reportedTimeRepository.save(time);
+        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()+"/times").toURI()).accept(MediaType.APPLICATION_JSON).build();
+        val returnedTest = testRestTemplate.exchange(entity, String[].class).getBody();
+        assertThat(returnedTest, notNullValue());
+        assertThat(returnedTest[0], equalTo(time.getFullEntry()));
     }
 
+    private final String exampleTime = "{\n" +
+            "    \"testId\": 30847872,\n" +
+            "    \"creationTime\": 76363421,\n" +
+            "    \"times\":{\n" +
+            "\t\"http://localhost:9000/\":{\n" +
+            "\t\t\"POST\":{\n" +
+            "\t\t\t\"story1\":{\n" +
+            "\t\t\t\t\"minLatency\":\"10\",\n" +
+            "\t\t\t\t\"avgLatency\":\"10\",\n" +
+            "\t\t\t\t\"maxLatency\":\"10\",\n" +
+            "\t\t\t\t\"throughput\":\"1\"\n" +
+            "\t\t\t},\n" +
+            "\t\t\t\"story2\":{\n" +
+            "\t\t\t\t\"minLatency\":\"20\",\n" +
+            "\t\t\t\t\"avgLatency\":\"20\",\n" +
+            "\t\t\t\t\"maxLatency\":\"20\",\n" +
+            "\t\t\t\t\"throughput\":\"1\"\n" +
+            "\t\t\t}\n" +
+            "\t\t}\n" +
+            "\t}\n" +
+            "    }\n" +
+            "}\n";
+
     @Test
-    public void canCreateATestWithMqtt() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
+    public void canGetTwoTimesOfATest() throws MalformedURLException, URISyntaxException {
         val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>());
-        client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,true);
-        Thread.sleep(200);
-        assertThat(testRepository.findById(test.getCreatedAt()).orElse(null), notNullValue());
-    }
-
-    @Test
-    public void canCreateATestWithMqttIncludingTestConfig() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
-        val config = "{ a=\" b\"}";
-        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
-        client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.getCreatedAt()+ " "+test.getTestConfig()).getBytes(StandardCharsets.UTF_8),2,true);
-        Thread.sleep(200);
-        assertThat(testRepository.findById(test.getCreatedAt()).orElse(null).getTestConfig(), equalTo(config));
-    }
-
-    @Test
-    public void canAcceptStopMessages() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
-        val config = "{ a=\" b\"}";
-        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
         testRepository.save(test);
-        client.publish(TestController.MQTT_CONTROL_TOPIC, ("testEnd "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,true);
+        val time = new ReportedTime();
+        time.setFullEntry("{}");
+        time.setTest(test);
+        val time2 = new ReportedTime();
+        time2.setFullEntry("{\"testId\":12}");
+        time2.setTest(test);
+        reportedTimeRepository.save(time);
+        reportedTimeRepository.save(time2);
+        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()+"/times").toURI()).accept(MediaType.APPLICATION_JSON).build();
+        val returnedTest = testRestTemplate.exchange(entity, String[].class).getBody();
+        assertThat(returnedTest, notNullValue());
+        assertThat(returnedTest[0], equalTo(time.getFullEntry()));
+        assertThat(returnedTest[1], equalTo(time2.getFullEntry()));
+    }
+
+    @Test
+    public void canCreateATimeEntryWithMqtt() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
+        val test = new de.hpi.tdgt.test.Test(30847872, "TestConfig", true, new LinkedList<>());
+        client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,false);
         Thread.sleep(200);
-        assertThat(testRepository.findById(test.getCreatedAt()).orElse(null).isActive(), equalTo(false));
-    }
-
-    @Test
-    public void canRetrieveFinishedTestIDs() throws InterruptedException, MalformedURLException, URISyntaxException {
-        val config = "{ a=\" b\"}";
-        val test1 = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
-        val test2 = new de.hpi.tdgt.test.Test(System.currentTimeMillis() + 10, config, false, new LinkedList<>());
-        testRepository.save(test1);
-        testRepository.save(test2);
-        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/tests/finished").toURI()).accept(MediaType.APPLICATION_JSON).build();
-        val returnedTests = testRestTemplate.exchange(entity, Long[].class).getBody();
-        assertThat(returnedTests, notNullValue());
-        assertThat(Arrays.asList(returnedTests), containsInRelativeOrder(test2.getCreatedAt()));
-        assertThat(Arrays.asList(returnedTests), not(containsInRelativeOrder(test1.getCreatedAt())));
-    }
-
-    @Test
-    public void canRetrieveRunningTestIDs() throws InterruptedException, MalformedURLException, URISyntaxException {
-        val config = "{ a=\" b\"}";
-        val test1 = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), config, true, new LinkedList<>());
-        val test2 = new de.hpi.tdgt.test.Test(System.currentTimeMillis() + 10, config, false, new LinkedList<>());
-        testRepository.save(test1);
-        testRepository.save(test2);
-        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/tests/running").toURI()).accept(MediaType.APPLICATION_JSON).build();
-        val returnedTests = testRestTemplate.exchange(entity, Long[].class).getBody();
-        assertThat(returnedTests, notNullValue());
-        assertThat(Arrays.asList(returnedTests), containsInRelativeOrder(test1.getCreatedAt()));
-        assertThat(Arrays.asList(returnedTests), not(containsInRelativeOrder(test2.getCreatedAt())));
+        client.publish(TimeController.MQTT_TIME_TOPIC, exampleTime.getBytes(StandardCharsets.UTF_8),2,false);
+        Thread.sleep(1000);
+        val retrievedTest = testRepository.findById(test.getCreatedAt()).orElse(null);
+        assertThat(retrievedTest, notNullValue());
+        assertThat(retrievedTest.getTimes(), notNullValue());
+        assertThat(retrievedTest.getTimes(), not(emptyIterable()));
+        assertThat(retrievedTest.getTimes().size(), is(1));
+        assertThat(retrievedTest.getTimes().get(0).getFullEntry(), equalTo(exampleTime));
     }
 
 }
