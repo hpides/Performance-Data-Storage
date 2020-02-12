@@ -22,7 +22,7 @@ junit:
     - BP-TDGT-CI
   script:
     - docker ps
-    - apk add --no-cache maven openjdk11 docker-compose
+    - apk add --no-cache maven openjdk11 docker-compose curl
     - cd Docker
     - ./dockerTest.sh
     - cd ..
