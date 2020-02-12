@@ -77,20 +77,20 @@ public class BootstrapUserTest {
 
     @Test
     public void AddingOfTestsWorks(){
-        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig",true, new LinkedList<>());
+        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig",true, new LinkedList<>(), new LinkedList<>());
         assertThat(testRepository.save(test), notNullValue());
     }
 
     @Test
     public void QueryingOfTestsWorks(){
-        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>());
+        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>(), new LinkedList<>());
         testRepository.save(test);
         assertThat(testRepository.existsById(test.getCreatedAt()), is(true));
     }
 
     @Test
     public void AddingReportedTimesWorks(){
-        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>());
+        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>(), new LinkedList<>());
         val time = new ReportedTime(test, "{}");
         testRepository.save(test);
         reportedTimeRepository.save(time);
