@@ -23,11 +23,8 @@ public class ReportedTime {
     @Lob
     private String fullEntry;
 
-    private Date recordingTime;
-
-    public ReportedTime(Test test, String fullEntry, Date recordingTime) {
+    public ReportedTime(Test test, String fullEntry) {
         this.test = test;
         this.fullEntry = fullEntry;
-        this.recordingTime = recordingTime;
     }
 }

@@ -91,7 +91,7 @@ public class BootstrapUserTest {
     @Test
     public void AddingReportedTimesWorks(){
         val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>());
-        val time = new ReportedTime(test, "{}",new Date(1234567890L));
+        val time = new ReportedTime(test, "{}");
         testRepository.save(test);
         reportedTimeRepository.save(time);
         assertThat(testRepository.findById(test.getCreatedAt()).get().getTimes(), not(empty()));
