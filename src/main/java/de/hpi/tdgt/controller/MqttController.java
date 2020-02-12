@@ -11,7 +11,7 @@ import java.util.UUID;
 public class MqttController {
     protected String mqtt_host;
     protected String mqtt_topic;
-    protected void prepareClient(IMqttMessageListener callback) throws MqttException {
+    protected MqttClient prepareClient(IMqttMessageListener callback) throws MqttException {
         String publisherId = UUID.randomUUID().toString();
         MqttClient client = new MqttClient(mqtt_host,publisherId, new MemoryPersistence());
         MqttConnectOptions options = new MqttConnectOptions();
@@ -20,6 +20,6 @@ public class MqttController {
         options.setConnectionTimeout(10);
         client.connect(options);
         client.subscribe(mqtt_topic, callback);
-
+        return client;
     }
 }

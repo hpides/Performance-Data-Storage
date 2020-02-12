@@ -1,11 +1,9 @@
 package de.hpi.tdgt;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import de.hpi.tdgt.controller.AssertionController;
 import de.hpi.tdgt.controller.TestController;
 import de.hpi.tdgt.controller.TimeController;
-import de.hpi.tdgt.test.ReportedTime;
-import de.hpi.tdgt.test.ReportedTimeRepository;
-import de.hpi.tdgt.test.TestRepository;
+import de.hpi.tdgt.test.*;
 import lombok.extern.log4j.Log4j2;
 import lombok.val;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -38,9 +36,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.UUID;
 
@@ -52,7 +47,7 @@ import static org.hamcrest.Matchers.*;
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ContextConfiguration(initializers = BootstrapUserTest.Initializer.class)
-public class TimeControllerTest {
+public class AssertionControllerTest {
 
     @ClassRule
     public static PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer().withPassword("inmemory")
@@ -111,80 +106,65 @@ public class TimeControllerTest {
     private TestRepository testRepository;
 
     @Autowired
-    private ReportedTimeRepository reportedTimeRepository;
-
-
+    private ReportedAssertionRepository assertionRepository;
     @Test
-    public void canGetATimeOfATest() throws MalformedURLException, URISyntaxException {
+    public void canGetAnAssertionOfATest() throws MalformedURLException, URISyntaxException {
         val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>(), new LinkedList<>());
         testRepository.save(test);
-        val time = new ReportedTime();
-        time.setFullEntry("{}");
-        time.setTest(test);
-        reportedTimeRepository.save(time);
-        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()+"/times").toURI()).accept(MediaType.APPLICATION_JSON).build();
+        val assertion = new ReportedAssertion();
+        assertion.setFullEntry("{}");
+        assertion.setTest(test);
+        assertionRepository.save(assertion);
+        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()+"/assertions").toURI()).accept(MediaType.APPLICATION_JSON).build();
         val returnedTest = testRestTemplate.exchange(entity, String[].class).getBody();
         assertThat(returnedTest, notNullValue());
-        assertThat(returnedTest[0], equalTo(time.getFullEntry()));
+        assertThat(returnedTest[0], equalTo(assertion.getFullEntry()));
     }
 
-    private String exampleTime = "{\n" +
-            "    \"testId\": 30847872,\n" +
-            "    \"creationTime\": 76363421,\n" +
-            "    \"times\":{\n" +
-            "\t\"http://localhost:9000/\":{\n" +
-            "\t\t\"POST\":{\n" +
-            "\t\t\t\"story1\":{\n" +
-            "\t\t\t\t\"minLatency\":\"10\",\n" +
-            "\t\t\t\t\"avgLatency\":\"10\",\n" +
-            "\t\t\t\t\"maxLatency\":\"10\",\n" +
-            "\t\t\t\t\"throughput\":\"1\"\n" +
-            "\t\t\t},\n" +
-            "\t\t\t\"story2\":{\n" +
-            "\t\t\t\t\"minLatency\":\"20\",\n" +
-            "\t\t\t\t\"avgLatency\":\"20\",\n" +
-            "\t\t\t\t\"maxLatency\":\"20\",\n" +
-            "\t\t\t\t\"throughput\":\"1\"\n" +
-            "\t\t\t}\n" +
-            "\t\t}\n" +
-            "\t}\n" +
+    private final String exampleAssertion = "{ \n" +
+            "  \"testId\":30847872,\n" +
+            "    \"actuals\":{ \n" +
+            "      \"postWithBody returns JSON\":{ \n" +
+            "        \"key\":1,\n" +
+            "        \"value\":[ \n" +
+            "          \"application/json\"\n" +
+            "        ]\n" +
+            "      }\n" +
             "    }\n" +
             "}\n";
 
     @Test
-    public void canGetTwoTimesOfATest() throws MalformedURLException, URISyntaxException {
+    public void canGetTwoAssertionsOfATest() throws MalformedURLException, URISyntaxException {
         val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>(), new LinkedList<>());
         testRepository.save(test);
-        val time = new ReportedTime();
-        time.setFullEntry("{}");
-        time.setTest(test);
-        val time2 = new ReportedTime();
-        time2.setFullEntry("{\"testId\":12}");
-        time2.setTest(test);
-        reportedTimeRepository.save(time);
-        reportedTimeRepository.save(time2);
-        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()+"/times").toURI()).accept(MediaType.APPLICATION_JSON).build();
+        val assertion = new ReportedAssertion();
+        val assertion2 = new ReportedAssertion();
+        assertion.setFullEntry("{}");
+        assertion2.setFullEntry("{\"a\"=0}");
+        assertion.setTest(test);
+        assertion2.setTest(test);
+        assertionRepository.save(assertion);
+        assertionRepository.save(assertion2);
+        val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()+"/assertions").toURI()).accept(MediaType.APPLICATION_JSON).build();
         val returnedTest = testRestTemplate.exchange(entity, String[].class).getBody();
         assertThat(returnedTest, notNullValue());
-        assertThat(returnedTest[0], equalTo(time.getFullEntry()));
-        assertThat(returnedTest[1], equalTo(time2.getFullEntry()));
+        assertThat(returnedTest[0], equalTo(assertion.getFullEntry()));
+        assertThat(returnedTest[1], equalTo(assertion2.getFullEntry()));
     }
-    //when a static ID was used, other tests failed.
+
     @Test
     public void canCreateATimeEntryWithMqtt() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
-        val testId = System.currentTimeMillis();
-        exampleTime = exampleTime.replace("30847872",""+testId);
-        val test = new de.hpi.tdgt.test.Test(testId, "TestConfig", true, new LinkedList<>(), new LinkedList<>());
-        client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,true);
+        val test = new de.hpi.tdgt.test.Test(30847872, "TestConfig", true, new LinkedList<>(), new LinkedList<>());
+        client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,false);
         Thread.sleep(200);
-        client.publish(TimeController.MQTT_TIME_TOPIC, exampleTime.getBytes(StandardCharsets.UTF_8),2,false);
+        client.publish(AssertionController.MQTT_ASSERTION_TOPIC, exampleAssertion.getBytes(StandardCharsets.UTF_8),2,false);
         Thread.sleep(1000);
         val retrievedTest = testRepository.findById(test.getCreatedAt()).orElse(null);
         assertThat(retrievedTest, notNullValue());
-        assertThat(retrievedTest.getTimes(), notNullValue());
-        assertThat(retrievedTest.getTimes(), not(emptyIterable()));
-        assertThat(retrievedTest.getTimes().size(), is(1));
-        assertThat(retrievedTest.getTimes().get(0).getFullEntry(), equalTo(exampleTime));
+        assertThat(retrievedTest.getAssertions(), notNullValue());
+        assertThat(retrievedTest.getAssertions(), not(emptyIterable()));
+        assertThat(retrievedTest.getAssertions().size(), is(1));
+        assertThat(retrievedTest.getAssertions().get(0).getFullEntry(), equalTo(exampleAssertion));
     }
 
 }
