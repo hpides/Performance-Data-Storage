@@ -170,7 +170,7 @@ public class TimeControllerTest {
     }
 
     @Test
-    public void canCreateATestWithMqtt() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
+    public void canCreateATimeEntryWithMqtt() throws MalformedURLException, URISyntaxException, JsonProcessingException, MqttException, InterruptedException {
         val test = new de.hpi.tdgt.test.Test(30847872, "TestConfig", true, new LinkedList<>());
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.getCreatedAt()).getBytes(StandardCharsets.UTF_8),2,false);
         Thread.sleep(200);
