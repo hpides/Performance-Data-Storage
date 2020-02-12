@@ -1,5 +1,6 @@
 package de.hpi.tdgt.controller;
 
+import de.hpi.tdgt.test.ReportedAssertion;
 import de.hpi.tdgt.test.ReportedTime;
 import de.hpi.tdgt.test.Test;
 import de.hpi.tdgt.test.TestRepository;
@@ -17,6 +18,8 @@ import java.util.stream.Collectors;
 @RestController
 @Log4j2
 public class TestController extends MqttController{
+
+
     public TestController(TestRepository repository, @Value("${mqtt.host}") String mqtt_host) throws MqttException {
         //only way to autowire it, field injection would not be working because evaluated after creation
         this.mqtt_host = mqtt_host;
@@ -41,6 +44,15 @@ public class TestController extends MqttController{
         return test.getTimes().stream().map(ReportedTime::getFullEntry).toArray(String[]::new);
     }
 
+    @GetMapping(path="/test/{id}/assertions")
+    public String[] getAssertionsForTest(@PathVariable long id){
+        val test = repository.findById(id).orElse(null);
+        if(test == null){
+            return new String[0];
+        }
+        return test.getAssertions().stream().map(ReportedAssertion::getFullEntry).toArray(String[]::new);
+    }
+
     @GetMapping(path="/tests/finished")
     public Long[] getFinishedTests(){
         return repository.findAllByIsActiveEquals(false).stream().map(Test::getCreatedAt).toArray(Long[]::new);
@@ -57,12 +69,14 @@ public class TestController extends MqttController{
      * @param message The actual message. See Wiki of RequestGenerator for allowed values.
      */
     private void receivedControlMessage(String topic, String message){
+        log.info("Hallo!");
         //double-check this is correct topic, else remaining code will fail
         if(!topic.equals(MQTT_CONTROL_TOPIC)){
             return;
         }
         String[] messageParts = message.split(" ");
         if(messageParts.length < 2){
+            log.error("Control message has too few parts!");
             return;
         }
         if(messageParts[0].equals("testStart")){
