@@ -69,7 +69,6 @@ public class TestController extends MqttController{
      * @param message The actual message. See Wiki of RequestGenerator for allowed values.
      */
     private void receivedControlMessage(String topic, String message){
-        log.info("Hallo!");
         //double-check this is correct topic, else remaining code will fail
         if(!topic.equals(MQTT_CONTROL_TOPIC)){
             return;
