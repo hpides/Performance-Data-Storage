@@ -22,10 +22,13 @@ junit:
     - BP-TDGT-CI
   script:
     - docker ps
-    - apk add --no-cache maven openjdk11 docker-compose curl
+    - apk add --no-cache maven openjdk11 docker-compose curl mosquitto
     - cd Docker
     - ./dockerTest.sh
     - cd ..
     # config assumes broker is running on same machine as System under Test, so we need this environment for the tests
     - echo "127.0.0.1 mosquitto" >> /etc/hosts
+    - mkdir -p /mosquitto/config/
+    - cp ./mosquitto/mosquitto.conf /mosquitto/config/
+    - $(which mosquitto) -c /mosquitto/config/mosquitto.conf > mosquitto.log 2>&1 &
     - mvn test
