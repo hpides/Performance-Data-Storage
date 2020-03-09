@@ -112,7 +112,7 @@ public class TestControllerTest {
 
     @Test
     public void canGetATest() throws MalformedURLException, URISyntaxException {
-        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, new LinkedList<>(), new LinkedList<>());
+        val test = new de.hpi.tdgt.test.Test(System.currentTimeMillis(), "TestConfig", true, null, null);
         testRepository.save(test);
         val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.getCreatedAt()).toURI()).accept(MediaType.APPLICATION_JSON).build();
         val returnedTest = testRestTemplate.exchange(entity, de.hpi.tdgt.test.Test.class).getBody();
