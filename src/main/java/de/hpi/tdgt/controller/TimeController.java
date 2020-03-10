@@ -41,6 +41,10 @@ public class TimeController extends MqttController {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private void receivedTimeMessage(String topic, String message) {
+        //just resetting persisted messages, ignore
+        if(message.isEmpty()){
+            return;
+        }
         try {
             val time = mapper.readValue(message, Map.class);
             val testId = time.getOrDefault("testId", null);
