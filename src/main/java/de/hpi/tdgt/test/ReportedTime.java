@@ -16,7 +16,7 @@ public class ReportedTime {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @ManyToOne()
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     private Test test;
     @Lob
     private String fullEntry;

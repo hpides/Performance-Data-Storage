@@ -37,6 +37,10 @@ public class AssertionController extends MqttController {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private void receivedTimeMessage(String topic, String message) {
+        //just resetting persisted messages, ignore
+        if(message.isEmpty()){
+            return;
+        }
         try {
             val assertion = mapper.readValue(message, Map.class);
             val testId = assertion.getOrDefault("testId", null);

@@ -73,7 +73,11 @@ public class TestController extends MqttController{
         if(!topic.equals(MQTT_CONTROL_TOPIC)){
             return;
         }
+        //just resetting persisted messages, ignore
         String[] messageParts = message.split(" ");
+        if(message.isEmpty()){
+            return;
+        }
         if(messageParts.length < 2){
             log.error("Control message has too few parts!");
             return;
