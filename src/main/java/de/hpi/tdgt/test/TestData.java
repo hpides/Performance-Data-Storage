@@ -3,7 +3,6 @@ package de.hpi.tdgt.test;
 import javax.persistence.*;
 
 @Entity
-@Table
 public class TestData {
     @Id
     public long id;
@@ -12,6 +11,10 @@ public class TestData {
     public boolean isActive = true;
 
     public byte[] serializedStatistic;
+
+    public TestData()
+    {
+    }
 
     public TestData(long id, String testConfig)
     {

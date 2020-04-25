@@ -12,9 +12,10 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -32,29 +33,22 @@ public class TestController {
         this.repository = repository;
     }
 
-    @GetMapping(path = "/test/{id}")
-    public TestData getTest(@PathVariable long id) {
-        return repository.findById(id).orElse(null);
+    @RequestMapping(path = "/test/{id}", method = RequestMethod.GET)
+    public ResponseEntity<TestData> getTest(@PathVariable long id) {
+        TestData data = repository.findById(id).orElse(null);
+        if(data == null)
+            return new ResponseEntity<TestData>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<TestData>(data, HttpStatus.OK);
     }
 
-    @GetMapping(path = "/tests/finished")
+    @RequestMapping(path = "/tests/finished", method = RequestMethod.GET)
     public Long[] getFinishedTests() {
         return repository.findAllByIsActiveEquals(false).stream().map(t -> t.id).toArray(Long[]::new);
     }
 
-    @GetMapping(path = "/tests/running")
+    @RequestMapping(path = "/tests/running", method = RequestMethod.GET)
     public Long[] getRunningTests() {
         return repository.findAllByIsActiveEquals(true).stream().map(t -> t.id).toArray(Long[]::new);
-    }
-
-    @GetMapping(path = "/test/{id}/times")
-    public byte[] getTimesForTest(@PathVariable long id) {
-        val times = repository.findById(id).orElse(null);
-        if (times == null) {
-            return new byte[0];
-        }
-
-        return times.serializedStatistic;
     }
 
     private void setupMqttClient(String mqtt_host) throws MqttException {
