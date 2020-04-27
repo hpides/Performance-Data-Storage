@@ -6,6 +6,7 @@ import javax.persistence.*;
 public class TestData {
     @Id
     public long id;
+    public int lastChange = 0;
     @Lob
     public String testConfig;
     public boolean isActive = true;
@@ -16,9 +17,10 @@ public class TestData {
     {
     }
 
-    public TestData(long id, String testConfig)
+    public TestData(long id, String testConfig, byte[] serializedStatistic)
     {
         this.id = id;
         this.testConfig = testConfig;
+        this.serializedStatistic = serializedStatistic;
     }
 }

@@ -62,7 +62,7 @@ public class BootstrapUserTest {
 
     @Test
     public void QueryingOfTestsWorks() {
-        val test = new TestData(System.currentTimeMillis(), "TestConfig");
+        val test = new TestData(System.currentTimeMillis(), "TestConfig", new byte[0]);
         testRepository.save(test);
 
         assertThat(testRepository.existsById(test.id), is(true));

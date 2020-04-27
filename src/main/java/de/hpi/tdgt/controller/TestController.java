@@ -1,7 +1,9 @@
 package de.hpi.tdgt.controller;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import de.hpi.tdgt.stats.Statistic;
 import de.hpi.tdgt.stats.StatisticProtos;
+import de.hpi.tdgt.test.StrippedTest;
 import de.hpi.tdgt.test.TestData;
 import de.hpi.tdgt.test.TestRepository;
 import lombok.extern.log4j.Log4j2;
@@ -12,11 +14,13 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -41,14 +45,11 @@ public class TestController {
         return new ResponseEntity<TestData>(data, HttpStatus.OK);
     }
 
-    @RequestMapping(path = "/tests/finished", method = RequestMethod.GET)
-    public Long[] getFinishedTests() {
-        return repository.findAllByIsActiveEquals(false).stream().map(t -> t.id).toArray(Long[]::new);
-    }
-
-    @RequestMapping(path = "/tests/running", method = RequestMethod.GET)
-    public Long[] getRunningTests() {
-        return repository.findAllByIsActiveEquals(true).stream().map(t -> t.id).toArray(Long[]::new);
+    @RequestMapping(path = "/tests", method = RequestMethod.GET)
+    public List<StrippedTest> getTests() {
+        List<StrippedTest> tests = new ArrayList<StrippedTest>(100);
+        repository.findAll().forEach(t -> tests.add(new StrippedTest(t.id, t.lastChange)));
+        return tests;
     }
 
     private void setupMqttClient(String mqtt_host) throws MqttException {
@@ -70,17 +71,12 @@ public class TestController {
      * @param message The actual message. See Wiki of RequestGenerator for allowed values.
      */
     private void receivedControlMessage(String topic, MqttMessage message) {
-        //double-check this is correct topic, else remaining code will fail
-        if (!topic.equals(MQTT_CONTROL_TOPIC)) {
-            return;
-        }
-        //just resetting persisted messages, ignore
         String[] messageParts = message.toString().split(" ");
         if (messageParts.length == 0) {
             return;
         }
         if (messageParts.length < 2) {
-            log.error("Control message has too few parts!");
+            log.error("Control message has too few parts! "+message.toString());
             return;
         }
 
@@ -109,8 +105,14 @@ public class TestController {
                 }
                 testConfig = sb.toString();
             }
-            repository.save(new TestData(testId, testConfig));
-            log.info("Test " + testId + " with description " + testConfig + " started!");
+            try {
+                val emptyStat = new Statistic(testId);
+
+                repository.save(new TestData(testId, testConfig, emptyStat.Serialize(0).toByteArray()));
+                log.info("Test " + testId + " started!");
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
         }
         else if (messageParts[0].equals("testEnd")) {
             long testId = 0;
@@ -127,7 +129,12 @@ public class TestController {
                 return;
             }
             test.isActive = false;
+            test.lastChange++;
             repository.save(test);
+            log.info("Test " + testId + " ended!");
+        }else
+        {
+            log.info("Unknown control msg: " + message.toString());
         }
     }
 
@@ -138,12 +145,23 @@ public class TestController {
             if (test == null) {
                 log.error("Received statistic for non existing test. Data will be lost");
                 return;
-            } else {
-                // merge
+            } else if (test.serializedStatistic == null || test.serializedStatistic.length == 0) {
+                test.serializedStatistic = message.getPayload();
+                repository.save(test);
+            }else
+            {
+                //merge
+                StatisticProtos.Statistic protoSA = StatisticProtos.Statistic.parseFrom(test.serializedStatistic);
+                Statistic sa = new Statistic(protoSA);
+                Statistic sb = new Statistic(stats);
 
+                sa.Merge(sb);
+                test.serializedStatistic = sa.Serialize(Math.max(protoSA.getSequenceNr(), stats.getSequenceNr())).toByteArray();
+                repository.save(test);
             }
+            log.info("Received statistic fro Test " + stats.getId());
 
-        } catch (InvalidProtocolBufferException e) {
+        } catch (InvalidProtocolBufferException | MalformedURLException e) {
             e.printStackTrace();
             return;
         }

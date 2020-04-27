@@ -108,7 +108,7 @@ public class TestControllerTest {
 
     @Test
     public void canGetATest() throws MalformedURLException, URISyntaxException {
-        val test = new TestData(System.currentTimeMillis(), "TestConfig");
+        val test = new TestData(System.currentTimeMillis(), "TestConfig", new byte[0]);
         testRepository.save(test);
         val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test.id).toURI()).accept(MediaType.APPLICATION_JSON).build();
         val returnedTest = testRestTemplate.exchange(entity, TestData.class).getBody();
@@ -117,7 +117,7 @@ public class TestControllerTest {
 
     @Test
     public void canCreateATestWithMqtt() throws MqttException, InterruptedException {
-        val test = new TestData(System.currentTimeMillis(), "TestConfig");
+        val test = new TestData(System.currentTimeMillis(), "TestConfig", new byte[0]);
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.id).getBytes(StandardCharsets.UTF_8),2,true);
         Thread.sleep(200);
         assertThat(testRepository.findById(test.id).orElse(null), notNullValue());
@@ -126,7 +126,7 @@ public class TestControllerTest {
     @Test
     public void canCreateATestWithMqttIncludingTestConfig() throws MqttException, InterruptedException {
         val config = "{ a=\" b\"}";
-        val test = new TestData(System.currentTimeMillis(), config);
+        val test = new TestData(System.currentTimeMillis(), config, new byte[0]);
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.id+" "+test.testConfig).getBytes(StandardCharsets.UTF_8),2,false);
         Thread.sleep(200);
         assertThat(testRepository.findById(test.id).orElse(null).testConfig, equalTo(config));
@@ -135,7 +135,7 @@ public class TestControllerTest {
     @Test
     public void canAcceptStopMessages() throws MqttException, InterruptedException {
         val config = "{ a=\" b\"}";
-        val test = new TestData(System.currentTimeMillis(), config);
+        val test = new TestData(System.currentTimeMillis(), config, new byte[0]);
         testRepository.save(test);
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testEnd "+test.id).getBytes(StandardCharsets.UTF_8),2,true);
         Thread.sleep(200);
@@ -145,8 +145,8 @@ public class TestControllerTest {
     @Test
     public void canRetrieveFinishedTestIDs() throws MalformedURLException, URISyntaxException {
         val config = "{ a=\" b\"}";
-        val test1 = new TestData(System.currentTimeMillis(), config);
-        val test2 = new TestData(System.currentTimeMillis() + 10, config);
+        val test1 = new TestData(System.currentTimeMillis(), config, new byte[0]);
+        val test2 = new TestData(System.currentTimeMillis() + 10, config, new byte[0]);
         test2.isActive = false;
         testRepository.save(test1);
         testRepository.save(test2);
@@ -160,8 +160,8 @@ public class TestControllerTest {
     @Test
     public void canRetrieveRunningTestIDs() throws MalformedURLException, URISyntaxException {
         val config = "{ a=\" b\"}";
-        val test1 = new TestData(System.currentTimeMillis(), config);
-        val test2 = new TestData(System.currentTimeMillis() + 10, config);
+        val test1 = new TestData(System.currentTimeMillis(), config, new byte[0]);
+        val test2 = new TestData(System.currentTimeMillis() + 10, config, new byte[0]);
         test2.isActive = false;
         testRepository.save(test1);
         testRepository.save(test2);
@@ -174,8 +174,7 @@ public class TestControllerTest {
 
     @Test
     public void canGetATimeOfATest() throws MalformedURLException, URISyntaxException {
-        val test1 = new TestData(System.currentTimeMillis(), "railgun");
-        test1.serializedStatistic = new byte[] {42};
+        val test1 = new TestData(System.currentTimeMillis(), "railgun", new byte[] {42});
         testRepository.save(test1);
 
         val entity = RequestEntity.get(new URL("http://localhost:"+localPort+"/test/"+test1.id+"/times").toURI()).accept(MediaType.APPLICATION_OCTET_STREAM).build();
@@ -187,7 +186,7 @@ public class TestControllerTest {
     //when a static ID was used, other tests failed.
     @Test
     public void canCreateATimeEntryWithMqtt() throws MqttException, InterruptedException, InvalidProtocolBufferException {
-        val test = new TestData(66, "TestConfig");
+        val test = new TestData(66, "TestConfig", new byte[0]);
 
         client.publish(TestController.MQTT_CONTROL_TOPIC, ("testStart "+test.id).getBytes(StandardCharsets.UTF_8),2,true);
 
