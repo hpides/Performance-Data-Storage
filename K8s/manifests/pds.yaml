@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pds-deployment
+  labels:
+    app: pds
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pds
+  template:
+    metadata:
+      labels:
+        app: pds
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+        - name: pds
+          image: localhost:5000/performancedatastorage:${tag}
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "1"
+            limits:
+              memory: "512Mi"
+              cpu: "2"
+          env:
+            - name: MYSQL_HOST
+              value: db
+            - name: JVM_OPTS
+              value: "-XX:MaxRAM=512m -Xmx128m " #-XX:+UseSerialGC"
+          ports:
+            - containerPort: 8080
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pds
+spec:
+  selector:
+    app: pds
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: pds-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            backend:
+              serviceName: pds
+              servicePort: 80
+      host: pds
