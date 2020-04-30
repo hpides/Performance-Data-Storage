@@ -15,7 +15,7 @@ spec:
         app: pds
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
+        prometheus.io/port: "6080"
     spec:
       containers:
         - name: pds
@@ -33,20 +33,25 @@ spec:
             - name: JVM_OPTS
               value: "-XX:MaxRAM=512m -Xmx128m " #-XX:+UseSerialGC"
           ports:
-            - containerPort: 8080
+            - containerPort: 6080
           imagePullPolicy: IfNotPresent
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: pds
+  name: performancedatastorage
 spec:
   selector:
     app: pds
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 8080
+      targetPort: 6080
+      name: external
+    - protocol: TCP
+      port: 6080
+      targetPort: 6080
+      name: internal
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
@@ -60,6 +65,6 @@ spec:
         paths:
           - path: /
             backend:
-              serviceName: pds
+              serviceName: performancedatastorage
               servicePort: 80
       host: pds
