@@ -159,7 +159,7 @@ public class TestController {
                 test.serializedStatistic = sa.Serialize(Math.max(protoSA.getSequenceNr(), stats.getSequenceNr())).toByteArray();
                 repository.save(test);
             }
-            log.info("Received statistic fro Test " + stats.getId());
+            log.info("Received statistic for Test " + stats.getId());
 
         } catch (InvalidProtocolBufferException | MalformedURLException e) {
             e.printStackTrace();
