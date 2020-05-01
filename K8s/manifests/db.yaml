@@ -41,6 +41,13 @@ spec:
               value: wordpress
             - name: POSTGRES_DB
               value: perfdata
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "128m"
+            limits:
+              memory: "128Mi"
+              cpu: "128m"
           volumeMounts:
             - mountPath: "/var/lib/postgresql/data"
               name: db-pv-storage
