@@ -161,7 +161,7 @@ public class TestController {
             }
             log.info("Received statistic for Test " + stats.getId());
 
-        } catch (InvalidProtocolBufferException | MalformedURLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return;
         }
