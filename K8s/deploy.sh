@@ -6,5 +6,5 @@ export NODENAME=$(kubectl get nodes --no-headers | awk '{ print $1 }' | head -1)
 cd ../K8s/
 for f in manifests/*
 do
-  envsubst < $f | kubectl -n reqgen apply -f -
+  envsubst < $f | kubectl -n ${NAMESPACE:-walt} apply -f -
 done
