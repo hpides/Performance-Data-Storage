@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
         - name: pds
-          image: localhost:5000/performancedatastorage:${tag}
+          image: ${image}:${tag}
           resources:
             requests:
               memory: "512Mi"

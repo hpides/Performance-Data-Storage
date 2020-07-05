@@ -21,8 +21,21 @@
 cd ../Docker
 export tag=$(date +%s)
 export deploy=true
+if [ -z ${REGISTRY+x} ];
+  then export REGISTRY=localhost:5000;
+fi
+printf "Using docker registry $REGISTRY"
+export image=${REGISTRY}/performancedatastorage
 export NODENAME=$(kubectl get nodes --no-headers | awk '{ print $1 }' | head -1)
-./build.sh
+# if not building from source, pull existing image from docker hub
+if [ -z ${DEV+x} ];
+  then
+        export image=worldofjarcraft/performancedatastorage;
+        export tag=latest;
+else
+  ./build.sh;
+fi
+echo $image
 cd ../K8s/
 for f in manifests/*
 do
